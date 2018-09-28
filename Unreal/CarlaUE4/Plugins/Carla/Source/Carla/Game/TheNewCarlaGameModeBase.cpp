@@ -67,6 +67,12 @@ void ATheNewCarlaGameModeBase::Tick(float DeltaSeconds)
 {
   Super::Tick(DeltaSeconds);
 
+  if (true) { /// @todo If semantic segmentation enabled.
+    check(GetWorld() != nullptr);
+    ATagger::TagActorsInLevel(*GetWorld(), true);
+    TaggerDelegate->SetSemanticSegmentationEnabled();
+  }
+
   GameInstance->Tick(DeltaSeconds);
 }
 

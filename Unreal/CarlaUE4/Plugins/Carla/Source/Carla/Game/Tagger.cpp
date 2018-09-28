@@ -14,7 +14,7 @@
 #include "EngineUtils.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 
-#ifdef CARLA_TAGGER_EXTRA_LOG
+// #ifdef CARLA_TAGGER_EXTRA_LOG
 static FString GetLabelAsString(const ECityObjectLabel Label)
 {
   switch (Label) {
@@ -36,7 +36,7 @@ static FString GetLabelAsString(const ECityObjectLabel Label)
 #undef CARLA_GET_LABEL_STR
   }
 }
-#endif // CARLA_TAGGER_EXTRA_LOG
+// #endif // CARLA_TAGGER_EXTRA_LOG
 
 template <typename T>
 static auto CastEnum(T label)
@@ -89,11 +89,24 @@ void ATagger::TagActor(const AActor &Actor, bool bTagForSemanticSegmentation)
   UE_LOG(LogCarla, Log, TEXT("Actor: %s"), *Actor.GetName());
 #endif // CARLA_TAGGER_EXTRA_LOG
 
+  // Get velocity of this actor
+  const FVector vel = Actor.GetVelocity();
+  float normvel = std::sqrt(std::pow(vel.X,2)+std::pow(vel.Y,2)+std::pow(vel.Z,2));
+  // If velocity is zero, then it is static object
+  const auto Label = (normvel < 1e-5) ? ECityObjectLabel::Buildings : ECityObjectLabel::Pedestrians;
+
+  // DEBUG: print messages
+  // UE_LOG(LogCarla, Log, TEXT("Actor: %s"), *Actor.GetName());
+  // UE_LOG(LogCarla, Log, TEXT(" - Velocity: %.3f, %.3f, %.3f"), vel.X, vel.Y, vel.Z);
+  // UE_LOG(LogCarla, Log, TEXT(" - Vel Norm: %.3f"), normvel);
+  // UE_LOG(LogCarla, Log, TEXT(" - Label: \"%s\""), *GetLabelAsString(Label));
+
+
   // Iterate static meshes.
   TArray<UStaticMeshComponent *> StaticMeshComponents;
   Actor.GetComponents<UStaticMeshComponent>(StaticMeshComponents);
   for (UStaticMeshComponent *Component : StaticMeshComponents) {
-    const auto Label = GetLabelByPath(Component->GetStaticMesh());
+    //const auto Label = GetLabelByPath(Component->GetStaticMesh());
     SetStencilValue(*Component, Label, bTagForSemanticSegmentation);
 #ifdef CARLA_TAGGER_EXTRA_LOG
     UE_LOG(LogCarla, Log, TEXT("  + StaticMeshComponent: %s"), *Component->GetName());
@@ -105,7 +118,7 @@ void ATagger::TagActor(const AActor &Actor, bool bTagForSemanticSegmentation)
   TArray<USkeletalMeshComponent *> SkeletalMeshComponents;
   Actor.GetComponents<USkeletalMeshComponent>(SkeletalMeshComponents);
   for (USkeletalMeshComponent *Component : SkeletalMeshComponents) {
-    const auto Label = GetLabelByPath(Component->GetPhysicsAsset());
+    //const auto Label = GetLabelByPath(Component->GetPhysicsAsset());
     SetStencilValue(*Component, Label, bTagForSemanticSegmentation);
 #ifdef CARLA_TAGGER_EXTRA_LOG
     UE_LOG(LogCarla, Log, TEXT("  + SkeletalMeshComponent: %s"), *Component->GetName());
